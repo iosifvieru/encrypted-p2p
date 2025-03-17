@@ -2,11 +2,11 @@ from Cryptodome.Util import number
 import base64
 
 
-"""
-Algoritmul lui Euclid extins -> determina CMMDC al doua numere si coef x si y a.i:
-    ax + by = cmmdc(a,b)
-"""
 def alg_euclid_extins(a, b):
+    """
+    Algoritmul lui Euclid extins -> determina CMMDC al doua numere si coef x si y a.i:
+        ax + by = cmmdc(a,b)
+    """
     if b == 0:
         return a, 1, 0
     
@@ -24,6 +24,13 @@ def alg_euclid_extins(a, b):
 #     return a
 
 def rsa_generate_keys(no_bits: int):
+    """
+    Functie de genereaza un set de key folosind alg. RSA
+        no_bits: intreg -> nr de biti pentru generarea numerelor prime p si q.
+        returneaza (public key, private_key)
+        
+    """
+
     """
     1. Generam doua numere prime (de preferat mari.)
     """
