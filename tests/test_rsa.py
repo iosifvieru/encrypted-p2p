@@ -16,4 +16,16 @@ class TestRSA(unittest.TestCase):
         mesaj = 123
         cipher = rsa_encrypt(mesaj, public_key)
 
-        self.assertEqual(123, rsa_decrypt(cipher, private_key))
+        self.assertEqual(mesaj, rsa_decrypt(cipher, private_key))
+
+    def test_rsa_wrong_key(self):
+        public_key1, _ = rsa_generate_keys(10)
+        _, private_key2 = rsa_generate_keys(10)
+
+        mesaj = 123
+        cipher = rsa_encrypt(mesaj, public_key1)
+
+        self.assertNotEqual(mesaj, rsa_decrypt(cipher, private_key2))
+
+if __name__ == "__main__":
+    unittest.main()

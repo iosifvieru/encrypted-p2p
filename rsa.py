@@ -1,6 +1,4 @@
 from Cryptodome.Util import number
-import base64
-
 
 def alg_euclid_extins(a, b):
     """
@@ -27,46 +25,39 @@ def rsa_generate_keys(no_bits: int):
     """
     Functie de genereaza un set de key folosind alg. RSA
         no_bits: intreg -> nr de biti pentru generarea numerelor prime p si q.
-        returneaza (public key, private_key)
+        returneaza o lista (public key, private_key)
         
-    """
+    Pasii necesari in generarea cheilor:
+    1. Se genereaza doua numere prime.
+    2. Se calculeaza n = p * q si phi = (p - 1) * (q - 1)
+    3. Se alege un nr. aleator e  a.i 1 < e < phi(n) si cmmdc(e, phi) = 1.
+    4. Se calculeaza intregul a.i d*e == 1 mod phi.
 
+    public key: (n, e)
+    private key: (n, d)
     """
-    1. Generam doua numere prime (de preferat mari.)
-    """
+    
+    # 1. generam doua numere prime (de preferat mari.)
     p = number.getPrime(no_bits)
     q = number.getPrime(no_bits)
 
-    #print("p: ", p)
-    #print("q: ", q)
-
-    """
-    2. Calculam n = p * q si phi = (p-1) * (q - 1)
-    """
+    # 2. calculam n = p * q si phi = (p-1) * (q - 1)
     n = p * q
-    #print("n: ", n)
     phi = (p - 1) * (q - 1)
-    #print("phi: ", phi)
-
-    """
-    3. Alegem un e, a.i 1 < e < phi(n) si cmmdc(e, phi) = 1."
     
-    Perechea (n,e) este cheia publica.
-    """
+    # 3. alegem un e, a.i 1 < e < phi(n) si cmmdc(e, phi) = 1."
+    # Perechea (n,e) este cheia publica.
     e = 0
     for e in range(2, phi):
         cmmdc, _, _ = alg_euclid_extins(e, phi)
         if cmmdc == 1:
             break
     
-    """
-    4. Calculam d a.i e * d == 1 % phi
-    """
+    # 4. calculam d a.i e * d == 1 % phi
     _, d, _ = alg_euclid_extins(e, phi)
     if d < 0:
         d += phi
 
-    #print("d:", d)
     public_key = (n, e)
     private_key = (n, d)
 
@@ -82,7 +73,7 @@ def rsa_decrypt(ciphertext, private_key):
     return pow(ciphertext, d, n)
 
 if __name__ == "__main__":
-    public_key, private_key = rsa_generate_keys(10)
+    public_key, private_key = rsa_generate_keys(100)
 
     print("cheie publica:", public_key)
     print("cheie_privata:", private_key)
