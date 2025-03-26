@@ -1,3 +1,8 @@
+"""
+RFC8017: RSA Cryptography Specifications Version 2.2
+https://datatracker.ietf.org/doc/html/rfc8017
+"""
+
 from Cryptodome.Util import number
 
 def alg_euclid_extins(a, b):
