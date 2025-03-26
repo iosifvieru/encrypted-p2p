@@ -1,0 +1,12 @@
+openssl enc -aes-256-cbc -pass pass:test -p -in plaintext.txt -out cipher.enc
+
+*** WARNING : deprecated key derivation used.
+Using -iter or -pbkdf2 would be better.
+salt=82AEC6E10E5F361D
+key=4A80C695C9B0C56440F4DBA3D9A73B8F535807FB2D8C4A19F4EAAF394EAD0627
+iv =34DE31756D16C074975A48C00917E28D
+
+openssl enc -aes-256-cbc -pass pass:test -d -in cipher.enc -out decrypted.txt
+
+*** WARNING : deprecated key derivation used.
+Using -iter or -pbkdf2 would be better.
