@@ -52,12 +52,14 @@ def rsa_generate_keys(no_bits: int):
     
     # 3. alegem un e, a.i 1 < e < phi(n) si cmmdc(e, phi) = 1."
     # Perechea (n,e) este cheia publica.
-    e = 0
-    for e in range(2, phi):
-        cmmdc, _, _ = alg_euclid_extins(e, phi)
-        if cmmdc == 1:
-            break
-    
+    e = 2**16 + 1
+    cmmdc, _, _ = alg_euclid_extins(e, phi)
+    if cmmdc != 1:
+        for e in range(2, phi):
+            cmmdc, _, _ = alg_euclid_extins(e, phi)
+            if cmmdc == 1:
+                break
+        
     # 4. calculam d a.i e * d == 1 % phi
     _, d, _ = alg_euclid_extins(e, phi)
     if d < 0:
