@@ -90,18 +90,27 @@ def int_to_string(integer: int):
     message_bytes = integer.to_bytes(length, byteorder="big")
     return message_bytes.decode()
 
+def read_file(filename):
+    file = open(filename)
+    continut = string_to_int(file.read())
+    file.close()
+    return continut
+
 if __name__ == "__main__":
-    public_key, private_key = rsa_generate_keys(512)
+    public_key, private_key = rsa_generate_keys(2048)
 
-    print("cheie publica:", public_key)
-    print("cheie_privata:", private_key)
+    # print("cheie publica:", public_key)
+    # print("cheie_privata:", private_key)
 
-    mesaj = input("Introdu textul: ")
-    print("mesaj original:", mesaj)
+    # mesaj = input("Introdu textul: ")
+    # print("mesaj original:", mesaj)
 
-    mesaj_int = string_to_int(mesaj)
+    # mesaj_int = string_to_int(mesaj)
 
-    cipher = rsa_encrypt(mesaj_int, public_key)
+    mesaj = read_file("test.txt")
+    print("mesaj original: ", int_to_string(mesaj))
+
+    cipher = rsa_encrypt(mesaj, public_key)
     print("mesaj criptat:", cipher)
 
     plain_decrypt = rsa_decrypt(cipher, private_key)
