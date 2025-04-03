@@ -5,6 +5,8 @@ https://datatracker.ietf.org/doc/html/rfc8017
 
 from Cryptodome.Util import number
 import math
+from tools.tools import my_pow
+from BigNumber.BigNumber import BigNumber
 
 def alg_euclid_extins(a, b):
     """
@@ -74,21 +76,22 @@ def rsa_generate_keys(no_bits: int):
 def rsa_encrypt(message, public_key):
     n, e = public_key
 
-    return pow(message, e, n)
+    return my_pow(message, e, n)
+    #return pow(message, e, n)
 
 def rsa_decrypt(ciphertext, private_key):
     n, d = private_key
-    return pow(ciphertext, d, n)
+    return my_pow(ciphertext, d, n)
 
 def string_to_int(string: str):
     # string_int = int.from_bytes(string.encode("utf-8"), byteorder="big")
     # return string_int
     return int.from_bytes(string.encode("utf-8"), byteorder="big")
 
-def int_to_string(integer: int):
+def int_to_string(integer):
     length = math.ceil(integer.bit_length() / 8)
     message_bytes = integer.to_bytes(length, byteorder="big")
-    return message_bytes.decode()
+    return message_bytes.decode('utf-8', errors='replace')
 
 def read_file(filename):
     file = open(filename)
@@ -97,15 +100,7 @@ def read_file(filename):
     return continut
 
 if __name__ == "__main__":
-    public_key, private_key = rsa_generate_keys(2048)
-
-    # print("cheie publica:", public_key)
-    # print("cheie_privata:", private_key)
-
-    # mesaj = input("Introdu textul: ")
-    # print("mesaj original:", mesaj)
-
-    # mesaj_int = string_to_int(mesaj)
+    public_key, private_key = rsa_generate_keys(1024)
 
     mesaj = read_file("test.txt")
     print("mesaj original: ", int_to_string(mesaj))
