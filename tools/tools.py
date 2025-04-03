@@ -1,12 +1,12 @@
 from BigNumber.BigNumber import BigNumber
 
 # my_pow - implements the pow algorithm for big numbers
-def my_pow(m: BigNumber, e: BigNumber, n: BigNumber) -> BigNumber:
+def my_pow(m: int, e: int, n: int) -> int:
     first_extra_factor = None
     second_extra_factor = None
 
-    while e != BigNumber(1):
-        if e % 2 == BigNumber(1):
+    while e != 1:
+        if e % 2 == 1:
             if first_extra_factor is None:
                 first_extra_factor = m
             else:
@@ -20,7 +20,7 @@ def my_pow(m: BigNumber, e: BigNumber, n: BigNumber) -> BigNumber:
             second_extra_factor = None
 
     if first_extra_factor is None:
-        first_extra_factor = BigNumber(1)
+        first_extra_factor = 1
 
     return (m * first_extra_factor) % n
 
