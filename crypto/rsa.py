@@ -6,7 +6,6 @@ https://datatracker.ietf.org/doc/html/rfc8017
 from Cryptodome.Util import number
 import math
 from tools.tools import my_pow
-from BigNumber.BigNumber import BigNumber
 
 def alg_euclid_extins(a, b):
     """
@@ -99,13 +98,25 @@ def read_file(filename):
     file.close()
     return continut
 
+def string_to_int(string: str):
+    # string_int = int.from_bytes(string.encode("utf-8"), byteorder="big")
+    # return string_int
+    return int.from_bytes(string.encode("utf-8"), byteorder="big")
+
+def int_to_string(integer: int):
+    length = math.ceil(integer.bit_length() / 8)
+    message_bytes = integer.to_bytes(length, byteorder="big")
+    return message_bytes.decode()
+
 if __name__ == "__main__":
     public_key, private_key = rsa_generate_keys(1024)
 
     mesaj = read_file("test.txt")
     print("mesaj original: ", int_to_string(mesaj))
 
-    cipher = rsa_encrypt(mesaj, public_key)
+    mesaj_int = string_to_int(mesaj)
+
+    cipher = rsa_encrypt(mesaj_int, public_key)
     print("mesaj criptat:", cipher)
 
     plain_decrypt = rsa_decrypt(cipher, private_key)
