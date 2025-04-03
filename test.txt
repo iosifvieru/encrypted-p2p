@@ -1,0 +1,7 @@
+Acesta este un mesaj criptat.
+
+Scrieti o functie care sa implementeze eficient ridicarea unui numar la o putere mare
+modulo N (𝑚𝑐 𝑚𝑜𝑑 𝑁, cu scopul ulterior de a fi folosita in implementarea RSA de la
+cerinta 2), conform hint-ului de mai sus; functia trebuie sa poata lucra cu numere mari, iar
+pentru operarea cu acestea se va folosi, la alegere, o biblioteca dedicata (Big Integer
+Library).
