@@ -2,6 +2,11 @@ import socket
 import threading
 import sys
 import time
+import json
+
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from crypto.rsa import rsa_generate_keys, rsa_encrypt, rsa_decrypt
 
 # Configuration
 CLIENTS = {
@@ -15,83 +20,104 @@ RETRY_ATTEMPTS = 5
 RETRY_DELAY = 1  # seconds
 
 
-def start_server(host, port, name):
-    """Server thread to receive messages."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
-        server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_sock.bind((host, port))
-        server_sock.listen()
-        print(f"[{name}] Listening on {host}:{port}...")
+class SecureClient:
+    def __init__(self, name):
+        self.name = name
+        self.host, self.port = CLIENTS[name]
+        self.public_key, self.private_key = rsa_generate_keys(128)
+        self.known_peers = {k: v for k, v in CLIENTS.items() if k != name}
+        self.peer_keys = {}
 
-        while True:
-            conn, addr = server_sock.accept()
-            threading.Thread(target=handle_client, args=(conn, addr, name), daemon=True).start()
+    def start(self):
+        threading.Thread(target=self.start_server, daemon=True).start()
+        time.sleep(1)
+        self.broadcast_public_key()
+        self.cli_loop()
 
+    def start_server(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((self.host, self.port))
+            s.listen()
+            print(f"[{self.name}] Listening on {self.host}:{self.port}")
+            while True:
+                conn, addr = s.accept()
+                threading.Thread(target=self.handle_connection, args=(conn,), daemon=True).start()
 
-def handle_client(conn, addr, name):
-    """Handles incoming messages."""
-    with conn:
-        data = conn.recv(BUFFER_SIZE)
-        if data:
-            print(f"\n[{name}] Received from {addr}: {data.decode()}\n> ", end='')
+    def handle_connection(self, conn):
+        with conn:
+            try:
+                data = conn.recv(BUFFER_SIZE)
+                if not data:
+                    return
+                msg = json.loads(data.decode())
 
+                if msg["type"] == "key":
+                    sender = msg["from"]
+                    pubkey = tuple(msg["data"])
+                    self.peer_keys[sender] = pubkey
+                    print(f"[{self.name}] Received public key from {sender}")
+                elif msg["type"] == "message":
+                    sender = msg["from"]
+                    cipher_int = int(msg["data"])
+                    plain = rsa_decrypt(cipher_int, self.private_key)
+                    print(f"\n[{self.name}] Encrypted message from {sender}: {plain} ('{chr(plain)}')\n> ", end='')
+            except Exception as e:
+                print(f"[{self.name}] Error handling connection: {e}")
 
-def send_message(target_name, message, self_name):
-    """Send message to another client, with retry logic."""
-    if target_name not in CLIENTS:
-        print(f"[{self_name}] Error: Unknown client {target_name}")
-        return
+    def broadcast_public_key(self):
+        for peer_name in self.known_peers:
+            self.send_data(peer_name, {
+                "type": "key",
+                "from": self.name,
+                "data": list(self.public_key)
+            })
 
-    target_host, target_port = CLIENTS[target_name]
-    for attempt in range(RETRY_ATTEMPTS):
+    def send_data(self, peer_name, data):
+        host, port = CLIENTS[peer_name]
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.connect((target_host, target_port))
-                sock.sendall(message.encode())
-                print(f"[{self_name}] Message sent to {target_name}")
-                return
-        except ConnectionRefusedError:
-            print(f"[{self_name}] {target_name} not ready. Retrying ({attempt + 1}/{RETRY_ATTEMPTS})...")
-            time.sleep(RETRY_DELAY)
-    print(f"[{self_name}] Failed to send message to {target_name} after {RETRY_ATTEMPTS} attempts.")
+                sock.connect((host, port))
+                sock.sendall(json.dumps(data).encode())
+        except Exception as e:
+            print(f"[{self.name}] Could not send to {peer_name}: {e}")
 
-
-def run_client(self_name):
-    if self_name not in CLIENTS:
-        print("Invalid client name. Choose from:", ', '.join(CLIENTS.keys()))
-        return
-
-    host, port = CLIENTS[self_name]
-
-    # Start server thread first
-    threading.Thread(target=start_server, args=(host, port, self_name), daemon=True).start()
-
-    # Small delay to ensure all servers are up before allowing sends
-    time.sleep(1)
-
-    print(f"[{self_name}] Ready. Known peers: {[k for k in CLIENTS if k != self_name]}")
-
-    while True:
-        try:
-            command = input("> ").strip()
-            if command.lower() in ['quit', 'exit']:
+    def cli_loop(self):
+        print(f"[{self.name}] Ready. Known peers: {list(self.known_peers.keys())}")
+        while True:
+            try:
+                command = input("> ").strip()
+                if command.lower() in ['quit', 'exit']:
+                    print("Exiting...")
+                    break
+                parts = command.split(" ", 1)
+                if len(parts) != 2:
+                    print("Usage: <target_client> <message>")
+                    continue
+                target, msg = parts
+                if target == self.name:
+                    print("Can't send to self.")
+                    continue
+                if target not in self.peer_keys:
+                    print(f"No public key for {target} yet.")
+                    continue
+                plaintext = ord(msg[0])  # just send first char for simplicity
+                encrypted = rsa_encrypt(plaintext, self.peer_keys[target])
+                self.send_data(target, {
+                    "type": "message",
+                    "from": self.name,
+                    "data": str(encrypted)
+                })
+                print(f"[{self.name}] Sent encrypted '{msg[0]}' to {target}")
+            except KeyboardInterrupt:
                 print("Exiting...")
                 break
-            parts = command.split(' ', 1)
-            if len(parts) != 2:
-                print("Usage: <target_client> <message>")
-                continue
-            target_client, message = parts
-            if target_client == self_name:
-                print("You can't message yourself.")
-                continue
-            send_message(target_client, message, self_name)
-        except KeyboardInterrupt:
-            break
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python client.py <client1|client2|client3>")
-    else:
-        run_client(sys.argv[1])
+        print("Usage: python secure_client.py <client1|client2|client3>")
+        sys.exit(1)
+    client_name = sys.argv[1]
+    if client_name not in CLIENTS:
+        print("Unknown client. Choose from:", list(CLIENTS.keys()))
+        sys.exit(1)
+    SecureClient(client_name).start()
