@@ -6,10 +6,6 @@ https://datatracker.ietf.org/doc/html/rfc8017
 from Cryptodome.Util import number
 import math
 from tools.tools import my_pow
-<<<<<<< HEAD
-=======
-from BigNumber.BigNumber import BigNumber
->>>>>>> 52d04af (changes to rsa and pow function)
 
 def alg_euclid_extins(a, b):
     """
@@ -85,25 +81,6 @@ def rsa_encrypt(message, public_key):
 def rsa_decrypt(ciphertext, private_key):
     n, d = private_key
     return my_pow(ciphertext, d, n)
-<<<<<<< HEAD
-
-def string_to_int(string: str):
-    # string_int = int.from_bytes(string.encode("utf-8"), byteorder="big")
-    # return string_int
-    return int.from_bytes(string.encode("utf-8"), byteorder="big")
-
-def int_to_string(integer):
-    length = math.ceil(integer.bit_length() / 8)
-    message_bytes = integer.to_bytes(length, byteorder="big")
-    return message_bytes.decode('utf-8', errors='replace')
-
-def read_file(filename):
-    file = open(filename)
-    continut = string_to_int(file.read())
-    file.close()
-    return continut
-=======
->>>>>>> 52d04af (changes to rsa and pow function)
 
 def string_to_int(string: str):
     # string_int = int.from_bytes(string.encode("utf-8"), byteorder="big")
