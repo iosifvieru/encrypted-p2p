@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import unittest
-from rsa import rsa_generate_keys, rsa_decrypt, rsa_encrypt
+from crypto.rsa import rsa_generate_keys, rsa_decrypt, rsa_encrypt
 
 class TestRSA(unittest.TestCase):
     def test_rsa(self):

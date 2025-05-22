@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import unittest
-from rsa import alg_euclid_extins
+from crypto.rsa import alg_euclid_extins
 
 class TestCMMDC(unittest.TestCase):
     """
