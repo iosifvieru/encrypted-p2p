@@ -4,6 +4,8 @@ https://datatracker.ietf.org/doc/html/rfc8017
 """
 
 from Cryptodome.Util import number
+import math
+from tools.tools import my_pow
 
 def alg_euclid_extins(a, b):
     """
@@ -52,12 +54,14 @@ def rsa_generate_keys(no_bits: int):
     
     # 3. alegem un e, a.i 1 < e < phi(n) si cmmdc(e, phi) = 1."
     # Perechea (n,e) este cheia publica.
-    e = 0
-    for e in range(2, phi):
-        cmmdc, _, _ = alg_euclid_extins(e, phi)
-        if cmmdc == 1:
-            break
-    
+    e = 2**16 + 1
+    cmmdc, _, _ = alg_euclid_extins(e, phi)
+    if cmmdc != 1:
+        for e in range(2, phi):
+            cmmdc, _, _ = alg_euclid_extins(e, phi)
+            if cmmdc == 1:
+                break
+        
     # 4. calculam d a.i e * d == 1 % phi
     _, d, _ = alg_euclid_extins(e, phi)
     if d < 0:
@@ -71,23 +75,38 @@ def rsa_generate_keys(no_bits: int):
 def rsa_encrypt(message, public_key):
     n, e = public_key
 
-    return pow(message, e, n)
+    return my_pow(message, e, n)
+    #return pow(message, e, n)
 
 def rsa_decrypt(ciphertext, private_key):
     n, d = private_key
-    return pow(ciphertext, d, n)
+    return my_pow(ciphertext, d, n)
+
+def string_to_int(string: str):
+    # string_int = int.from_bytes(string.encode("utf-8"), byteorder="big")
+    # return string_int
+    return int.from_bytes(string.encode("utf-8"), byteorder="big")
+
+def int_to_string(integer):
+    length = math.ceil(integer.bit_length() / 8)
+    message_bytes = integer.to_bytes(length, byteorder="big")
+    return message_bytes.decode('utf-8', errors='replace')
+
+def read_file(filename):
+    file = open(filename)
+    continut = string_to_int(file.read())
+    file.close()
+    return continut
 
 if __name__ == "__main__":
-    public_key, private_key = rsa_generate_keys(100)
+    public_key, private_key = rsa_generate_keys(1024)
 
-    print("cheie publica:", public_key)
-    print("cheie_privata:", private_key)
-
-    mesaj = 65 # A -> ascii
-    print("mesaj original:", mesaj)
+    mesaj = read_file("test.txt")
+    print("mesaj original: ", int_to_string(mesaj))
 
     cipher = rsa_encrypt(mesaj, public_key)
     print("mesaj criptat:", cipher)
 
     plain_decrypt = rsa_decrypt(cipher, private_key)
+    plain_decrypt = int_to_string(plain_decrypt)
     print("mesaj decriptat:", plain_decrypt)
