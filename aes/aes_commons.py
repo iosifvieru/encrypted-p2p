@@ -50,6 +50,8 @@ def xTimes(byte):
 
     return byte
 
+# function was inspired from here:
+# https://crypto.stackexchange.com/questions/2569/how-does-one-implement-the-inverse-of-aes-mixcolumns
 def mul_gf8(byte, mul_byte):
     if mul_byte == 1:
         return byte
@@ -127,3 +129,4 @@ def sub_word(word):
 
 def round_key_matrix(key_words):
     return [[key_words[c][r] for c in range(4)] for r in range(4)]
+
