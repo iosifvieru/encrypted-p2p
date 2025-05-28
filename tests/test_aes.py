@@ -5,8 +5,12 @@ Unit test AES
 import sys
 import os
 
-from aes.aes import from_byte_to_sbox, shift_rows, mix_columns, xTimes, mul_gf8, extract_column, multiply_column, \
-    aes_encryption, key_expansion, add_round_key, bytes_from_state
+from aes.aes_decrypt import inv_shift_rows, inv_sub_bytes, aes_decryption, key_expansion_eic
+from aes.aes_encrypt import from_byte_to_sbox, shift_rows, \
+    aes_encryption, key_expansion, add_round_key
+
+from aes.aes_constants import mul_mat_crypt, mul_mat_decrypt
+from aes.aes_commons import xTimes, bytes_from_state, multiply_column, mix_columns, mul_gf8, extract_column
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -56,6 +60,16 @@ class TestAES(unittest.TestCase):
 
         assert res == expectedRes
 
+    def test_inv_sub_bytes(self):
+        test_data = bytearray.fromhex('328831e0435a3137f6309807a88da234')
+        state = state_from_bytes(test_data)
+        res = sub_bytes(state)
+
+
+        res = inv_sub_bytes(res)
+
+        assert res == state
+
     def test_shift_rows(self):
         state = [
             [35, 26, 66, 194],
@@ -70,6 +84,24 @@ class TestAES(unittest.TestCase):
             [70, 58, 199, 199],
             [24, 225, 154, 197]
         ]
+
+        assert shifted == expected
+
+    def test_inv_shift_rows(self):
+        state = [
+            [35, 26, 66, 194],
+            [196, 190, 4, 93],
+            [199, 199, 70, 58],
+            [225, 154, 197, 24]]
+
+        shifted = inv_shift_rows(state)
+        expected = [
+            [35, 26, 66, 194],
+            [93, 196, 190, 4],
+            [70, 58, 199, 199],
+            [154, 197, 24, 225]
+        ]
+
 
         assert shifted == expected
 
@@ -103,6 +135,54 @@ class TestAES(unittest.TestCase):
 
         assert actualRes == expectedRes
 
+    def test_mul_gf8_case9(self):
+        actualRes = mul_gf8(0x57, 9)
+        expectedRes = 0xd9
+
+        assert actualRes == expectedRes
+
+        actualRes = mul_gf8(0x83, 9)
+        expectedRes = 0xf7
+
+        assert actualRes == expectedRes
+
+    def test_mul_gf8_case11(self):
+        actualRes = mul_gf8(0x57, 11)
+        expectedRes = 0x77
+
+        assert actualRes == expectedRes
+
+        actualRes = mul_gf8(0x83, 11)
+        expectedRes = 0xea
+
+        assert actualRes == expectedRes
+
+    def test_mul_gf8_case13(self):
+        actualRes = mul_gf8(0x57, 13)
+        expectedRes = 0x9e
+        logger.info("Expected res {}".format(expectedRes))
+        logger.info("Actual res {}".format(actualRes))
+
+        assert actualRes == expectedRes
+
+        actualRes = mul_gf8(0x83, 13)
+        expectedRes = 0xcd
+        logger.info("Expected res {}".format(expectedRes))
+        logger.info("Actual res {}".format(actualRes))
+
+        assert actualRes == expectedRes
+
+    def test_mul_gf8_case14(self):
+        actualRes = mul_gf8(0x57, 14)
+        expectedRes = 0x67
+
+        assert actualRes == expectedRes
+
+        actualRes = mul_gf8(0x83, 14)
+        expectedRes = 0x53
+
+        assert actualRes == expectedRes
+
     def test_extract_columns(self):
         state = [
             [35, 26, 66, 194],
@@ -117,12 +197,12 @@ class TestAES(unittest.TestCase):
 
     def test_multiply_column(self):
         col = [0xdb, 0x13, 0x53, 0x45]
-        res_col = multiply_column(col)
+        res_col = multiply_column(col, mul_mat_crypt)
         expected_res_col = [0x8e, 0x4d, 0xa1, 0xbc]
 
         assert res_col == expected_res_col
 
-    def test_mix_columns(self):
+    def test_mix_columns_encrypt(self):
         state = [
             [0xdb, 0xf2, 0x01, 0xc6],
             [0x13, 0x0a, 0x01, 0xc6],
@@ -130,7 +210,7 @@ class TestAES(unittest.TestCase):
             [0x45, 0x5c, 0x01, 0xc6],
         ]
 
-        res = mix_columns(state)
+        res = mix_columns(state, mul_mat_crypt)
         expected = [
                     [142, 159, 1, 198],
                     [77, 220, 1, 198],
@@ -142,6 +222,27 @@ class TestAES(unittest.TestCase):
         logger.info(f"Expected result for mix_columns: {expected}")
 
         assert res == expected
+
+
+    def test_mix_columns_decrypt(self):
+        state = [
+                [0xdb, 0xf2, 0x01, 0xc6],
+                [0x13, 0x0a, 0x01, 0xc6],
+                [0x53, 0x22, 0x01, 0xc6],
+                [0x45, 0x5c, 0x01, 0xc6]
+            ]
+
+        res = mix_columns(state, mul_mat_crypt)
+        expected = [
+                [0x8e, 0x9f, 0x01, 0xc6],
+                [0x4d, 0xdc, 0x01, 0xc6],
+                [0xa1, 0x58, 0x01, 0xc6],
+                [0xbc, 0x9d, 0x01, 0xc6]
+            ]
+        assert res == expected
+
+        res = mix_columns(expected, mul_mat_decrypt)
+        assert res == state
 
     def test_key_expansion(self):
         key = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
@@ -195,7 +296,6 @@ class TestAES(unittest.TestCase):
         result = key_expansion(key)
         self.assertEqual(result, expected_expansion)
 
-
     def test_add_round_key_basic(self):
         state = [
             [0x00, 0x01, 0x02, 0x03],
@@ -243,6 +343,8 @@ class TestAES(unittest.TestCase):
 
         assert cipher == expected_cipher, f"Expected {expected_cipher.hex()}, got {cipher.hex()}"
 
+        plain = aes_decryption(cipher, key)
+        assert plain == plaintext
 
 if __name__ == "__main__":
     unittest.main()
